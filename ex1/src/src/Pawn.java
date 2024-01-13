@@ -1,37 +1,11 @@
 package src;
 
 public class Pawn extends ConcreatePiece {
-    private int killsCount;
-
-    public Pawn(Player owner)
+    public Pawn(Player owner, int serialNumber)
     {
-        this.owner = owner;
-        this.killsCount = 0;
+        // 'D' stands for the defender, 'A' stands for the attacker.
+        super(owner,
+            owner.isPlayerOne() ? "♙" : "♟",
+            owner.isPlayerOne() ? "D" + serialNumber : "A" + serialNumber);
     }
-
-    public String getType() {
-        if(this.owner.isPlayerOne())
-            return "♙";
-        else
-            return "♟";
-
-    }
-    public void counterKills() {
-        this.killsCount++;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

@@ -2,13 +2,15 @@ package src;
 
 import java.util.Stack;
 
+import static java.lang.System.*;
+
 public class GameLogic implements PlayableLogic {
     private final int BOARD_SIZE = 11;
-    private Stack<ConcreatePiece[][]> gameStates = new Stack<>();
+    private final Stack<ConcreatePiece[][]> gameStates = new Stack<>();
     private ConcreatePiece[][] board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
-    private ConcreatePlayer attackPlayer = new ConcreatePlayer(false);
-    private ConcreatePlayer defendPlayer = new ConcreatePlayer(true);
-    private boolean gameFinish; //checkthisBoolean
+    private final ConcreatePlayer attackPlayer = new ConcreatePlayer(false);
+    private final ConcreatePlayer defendPlayer = new ConcreatePlayer(true);
+    private boolean gameFinish; //check this Boolean
     private boolean isAttTurn;//is attacker turn
     private Position kingPos;
 
@@ -23,33 +25,51 @@ public class GameLogic implements PlayableLogic {
         this.isAttTurn = true;
         this.kingPos= new Position(5,5);
 
-        // Place the king at the center of the board
         int center = BOARD_SIZE / 2;
-        board[center][center] = new King(this.defendPlayer);
-
         // Place pawns of type "♙" around the king - defender
-        for (int i = -2; i <= 2; i++) {
-            if (i != 0) {
-                board[center + i][center] = new Pawn(this.defendPlayer);
-                board[center][center + i] = new Pawn(this.defendPlayer);
-            }
-        }
-        board[6][6] = new Pawn(this.defendPlayer);
-        board[4][6] = new Pawn(this.defendPlayer);
-        board[6][4] = new Pawn(this.defendPlayer);
-        board[4][4] = new Pawn(this.defendPlayer);
+        board[5][3] = new Pawn(this.defendPlayer, 1);
+        board[4][4] = new Pawn(this.defendPlayer, 2);
+        board[5][4] = new Pawn(this.defendPlayer, 3);
+        board[6][4] = new Pawn(this.defendPlayer, 4);
+        board[3][5] = new Pawn(this.defendPlayer, 5);
+        board[4][5] = new Pawn(this.defendPlayer, 6);
+        // Place the king at the center of the board
+        board[center][center] = new King(7);
+        board[6][5] = new Pawn(this.defendPlayer, 8);
+        board[7][5] = new Pawn(this.defendPlayer, 9);
+        board[4][6] = new Pawn(this.defendPlayer, 10);
+        board[5][6] = new Pawn(this.defendPlayer, 11);
+        board[6][6] = new Pawn(this.defendPlayer, 12);
+        board[5][7] = new Pawn(this.defendPlayer, 13);
 
         // Place pawns of type "♟" around the board - attacker
-        for (int i = 3; i <= 7; i++) {
-            board[i][0] = new Pawn(this.attackPlayer);
-            board[i][BOARD_SIZE - 1] = new Pawn(this.attackPlayer);
-            board[0][i] = new Pawn(this.attackPlayer);
-            board[BOARD_SIZE - 1][i] = new Pawn(this.attackPlayer);
-        }
-        board[1][5] = new Pawn(this.attackPlayer);
-        board[5][1] = new Pawn(this.attackPlayer);
-        board[9][5] = new Pawn(this.attackPlayer);
-        board[5][9] = new Pawn(this.attackPlayer);
+        board[3][0] = new Pawn(this.attackPlayer,1);
+        board[4][0] = new Pawn(this.attackPlayer,2);
+        board[5][0] = new Pawn(this.attackPlayer,3);
+        board[6][0] = new Pawn(this.attackPlayer,4);
+        board[7][0] = new Pawn(this.attackPlayer,5);
+        board[5][1] = new Pawn(this.attackPlayer,6);
+
+        board[0][3] = new Pawn(this.attackPlayer,7);
+        board[0][4] = new Pawn(this.attackPlayer,9);
+        board[0][5] = new Pawn(this.attackPlayer,11);
+        board[0][6] = new Pawn(this.attackPlayer,15);
+        board[0][7] = new Pawn(this.attackPlayer,17);
+        board[1][5] = new Pawn(this.attackPlayer,12);
+
+        board[10][3] = new Pawn(this.attackPlayer,8);
+        board[10][4] = new Pawn(this.attackPlayer,10);
+        board[10][5] = new Pawn(this.attackPlayer,14);
+        board[10][6] = new Pawn(this.attackPlayer,16);
+        board[10][7] = new Pawn(this.attackPlayer,18);
+        board[9][5] = new Pawn(this.attackPlayer,13);
+
+        board[3][10] = new Pawn(this.attackPlayer,20);
+        board[4][10] = new Pawn(this.attackPlayer,21);
+        board[5][10] = new Pawn(this.attackPlayer,22);
+        board[6][10] = new Pawn(this.attackPlayer,23);
+        board[7][10] = new Pawn(this.attackPlayer,24);
+        board[5][9] = new Pawn(this.attackPlayer,19);
     }
 
 
@@ -77,36 +97,49 @@ public class GameLogic implements PlayableLogic {
         }
     }
 
-    public boolean isMoveLegal(Position a, Position b)
-    {   if(a == null)
+    public boolean isMoveLegal(Position a, Position b) {
+        if (a == null) {
             return false;
-        if(board[a.getX()][a.getY()] instanceof Pawn)
-            if ((b.getY()==0 && b.getX()==0) || (b.getY()==0 && b.getX()==10) || (b.getY()==10 && b.getX()==0) || (b.getY()==10 && b.getX()==10) )
+        }
+        if (board[a.getX()][a.getY()] instanceof Pawn) {
+            if (isCornerPosition(b))
                 return false;
-        if ((isAttTurn && board[a.getX()][a.getY()].getOwner().isPlayerOne()) || (!isAttTurn && !board[a.getX()][a.getY()].getOwner().isPlayerOne()))
+        }
+        if ((isAttTurn && board[a.getX()][a.getY()].getOwner().isPlayerOne()) || (!isAttTurn && !board[a.getX()][a.getY()].getOwner().isPlayerOne())) {
             return false;
-        if (a.getX() != b.getX() && a.getY() != b.getY())
+        }
+        if (a.getX() != b.getX() && a.getY() != b.getY()) {
             return false;
-        if(board[b.getX()][b.getY()]!=null)
+        }
+        if (board[b.getX()][b.getY()] != null) {
             return false;
-        if(a.getX()<b.getX())
-            for (int i=a.getX()+1;i<b.getX();i++)
-                if(board[i][a.getY()]!=null)
+        }
+        if (a.getX() < b.getX()) {
+            for (int i = a.getX() + 1; i < b.getX(); i++) {
+                if (board[i][a.getY()] != null) {
                     return false;
-        else if(a.getX()>b.getX())
-            for (int j=a.getX()-1;j<b.getX();j--)
-                if(board[j][a.getY()]!=null)
+                }
+            }
+        } else if (a.getX() > b.getX()) {
+            for (int j = a.getX() - 1; j > b.getX(); j--) {
+                if (board[j][a.getY()] != null) {
                     return false;
-        else if(a.getY()<b.getY())
-            for (int k=a.getY()+1;k<b.getY();k++)
-                if(board[a.getX()][k]!=null)
+                }
+            }
+        } else if (a.getY() < b.getY()) {
+            for (int k = a.getY() + 1; k < b.getY(); k++) {
+                if (board[a.getX()][k] != null) {
                     return false;
-        else if(a.getY()>b.getY())
-            for (int l=a.getY()-1;l<b.getY();l--)
-                if(board[a.getX()][l]!=null)
+                }
+            }
+        } else if (a.getY() > b.getY()) {
+            for (int l = a.getY() - 1; l > b.getY(); l--) {
+                if (board[a.getX()][l] != null) {
                     return false;
+                }
+            }
+        }
         return true;
-
     }
 
     public void kingMove(Position a,Position b)
@@ -187,7 +220,7 @@ public class GameLogic implements PlayableLogic {
             return true;
         }
 
-        if((x==0 && y==0)||(x==0 && y==10)||(x==10 && y==0)||(x==10 && y==10)) {
+        if(this.isCornerPosition(this.kingPos)) {
             defWin();
             return true;
         }
@@ -258,9 +291,7 @@ public class GameLogic implements PlayableLogic {
     private ConcreatePiece[][] copyBoard() {
         ConcreatePiece[][] copy = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
         for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                copy[i][j] = board[i][j];
-            }
+            arraycopy(board[i], 0, copy[i], 0, BOARD_SIZE);
         }
         return copy;
     }

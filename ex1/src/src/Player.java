@@ -9,7 +9,7 @@ public interface Player {
 
     /**
      *
-     * @return true if the player is player 1, false otherwise.
+     * @return true if the player is defender, false otherwise (attacker).
      */
     boolean isPlayerOne();
 

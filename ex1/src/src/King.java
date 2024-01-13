@@ -1,16 +1,9 @@
 package src;
 
 public class King extends ConcreatePiece {
-
-    //private String type="♔";
-
-    public King(Player defPlayer)
+    public King(int serialNUmber)
     {
-        this.owner = defPlayer;
-    }
-
-    public String getType()
-    {
-        return "♔";
+        // king's owner is always the defender.
+        super(new ConcreatePlayer(true), "♔", "K" + serialNUmber);
     }
 }
