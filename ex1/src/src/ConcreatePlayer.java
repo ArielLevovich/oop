@@ -2,15 +2,12 @@ package src;
 
 public class ConcreatePlayer implements Player{
 
-    public boolean isDef;
+    public boolean isDefender;
     private int winsCount;
 
     public ConcreatePlayer(boolean isOne)
     {
-        if (isOne)
-            this.isDef=true;
-        else
-            this.isDef=false;
+        this.isDefender = isOne;
         this.winsCount=0;
     }
 
@@ -18,9 +15,7 @@ public class ConcreatePlayer implements Player{
 
     public boolean isPlayerOne()
     {
-        if(isDef)
-            return true;
-        return false;
+        return isDefender;
     }
 
     public void wins()

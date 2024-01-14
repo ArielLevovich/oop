@@ -3,7 +3,6 @@ package src;
 public class Position {
     private int x;//row
     private int y;//col
-    //protected int [][] board;
 
     public Position(int x, int y)
     {

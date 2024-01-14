@@ -1,5 +1,9 @@
 package src;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Stack;
 
 import static java.lang.System.*;
@@ -8,92 +12,148 @@ public class GameLogic implements PlayableLogic {
     private final int BOARD_SIZE = 11;
     private final Stack<ConcreatePiece[][]> gameStates = new Stack<>();
     private ConcreatePiece[][] board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
+
+    private ArrayList<ConcreatePiece> attackers;
+    private ArrayList<ConcreatePiece> defenders;
     private final ConcreatePlayer attackPlayer = new ConcreatePlayer(false);
     private final ConcreatePlayer defendPlayer = new ConcreatePlayer(true);
     private boolean gameFinish; //check this Boolean
     private boolean isAttTurn;//is attacker turn
     private Position kingPos;
-
+    private boolean isDefenderWin;
     public GameLogic() {
         reset();
     }
 
     @Override
     public void reset() {
-        this.board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
         this.gameFinish = false;
         this.isAttTurn = true;
-        this.kingPos= new Position(5,5);
+        this.kingPos = new Position(5,5);
 
-        int center = BOARD_SIZE / 2;
-        // Place pawns of type "♙" around the king - defender
-        board[5][3] = new Pawn(this.defendPlayer, 1);
-        board[4][4] = new Pawn(this.defendPlayer, 2);
-        board[5][4] = new Pawn(this.defendPlayer, 3);
-        board[6][4] = new Pawn(this.defendPlayer, 4);
-        board[3][5] = new Pawn(this.defendPlayer, 5);
-        board[4][5] = new Pawn(this.defendPlayer, 6);
-        // Place the king at the center of the board
-        board[center][center] = new King(7);
-        board[6][5] = new Pawn(this.defendPlayer, 8);
-        board[7][5] = new Pawn(this.defendPlayer, 9);
-        board[4][6] = new Pawn(this.defendPlayer, 10);
-        board[5][6] = new Pawn(this.defendPlayer, 11);
-        board[6][6] = new Pawn(this.defendPlayer, 12);
-        board[5][7] = new Pawn(this.defendPlayer, 13);
-
-        // Place pawns of type "♟" around the board - attacker
-        board[3][0] = new Pawn(this.attackPlayer,1);
-        board[4][0] = new Pawn(this.attackPlayer,2);
-        board[5][0] = new Pawn(this.attackPlayer,3);
-        board[6][0] = new Pawn(this.attackPlayer,4);
-        board[7][0] = new Pawn(this.attackPlayer,5);
-        board[5][1] = new Pawn(this.attackPlayer,6);
-
-        board[0][3] = new Pawn(this.attackPlayer,7);
-        board[0][4] = new Pawn(this.attackPlayer,9);
-        board[0][5] = new Pawn(this.attackPlayer,11);
-        board[0][6] = new Pawn(this.attackPlayer,15);
-        board[0][7] = new Pawn(this.attackPlayer,17);
-        board[1][5] = new Pawn(this.attackPlayer,12);
-
-        board[10][3] = new Pawn(this.attackPlayer,8);
-        board[10][4] = new Pawn(this.attackPlayer,10);
-        board[10][5] = new Pawn(this.attackPlayer,14);
-        board[10][6] = new Pawn(this.attackPlayer,16);
-        board[10][7] = new Pawn(this.attackPlayer,18);
-        board[9][5] = new Pawn(this.attackPlayer,13);
-
-        board[3][10] = new Pawn(this.attackPlayer,20);
-        board[4][10] = new Pawn(this.attackPlayer,21);
-        board[5][10] = new Pawn(this.attackPlayer,22);
-        board[6][10] = new Pawn(this.attackPlayer,23);
-        board[7][10] = new Pawn(this.attackPlayer,24);
-        board[5][9] = new Pawn(this.attackPlayer,19);
+        initDefenders();
+        initAttackers();
+        initBoard();
     }
 
+    private void initBoard() {
+        this.board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
+        for (ConcreatePiece piece : this.defenders) {
+            this.board[piece.getFirstPosition().getX()][piece.getFirstPosition().getY()] = piece;
+        }
+        for (ConcreatePiece piece : this.attackers) {
+            this.board[piece.getFirstPosition().getX()][piece.getFirstPosition().getY()] = piece;
+        }
+    }
 
+    private void initDefenders() {
+        this.defenders = new ArrayList<>();
+        this.defenders.add(new Pawn(this.defendPlayer, 1, new Position(5, 3)));
+        // Place pawns of type "♙" around the king - defender
+        this.defenders.add(new Pawn(this.defendPlayer, 2, new Position(4, 4)));
+        this.defenders.add(new Pawn(this.defendPlayer, 3, new Position(5, 4)));
+        this.defenders.add(new Pawn(this.defendPlayer, 4, new Position(6, 4)));
+        this.defenders.add(new Pawn(this.defendPlayer, 5, new Position(3, 5)));
+        this.defenders.add(new Pawn(this.defendPlayer, 6, new Position(4, 5)));
+        // Place the king at the center of the board
+        this.defenders.add(new King(7, this.kingPos));
+        this.defenders.add(new Pawn(this.defendPlayer, 8, new Position(6, 5)));
+        this.defenders.add(new Pawn(this.defendPlayer, 9, new Position(7, 5)));
+        this.defenders.add(new Pawn(this.defendPlayer, 10, new Position(4, 6)));
+        this.defenders.add(new Pawn(this.defendPlayer, 11, new Position(5, 6)));
+        this.defenders.add(new Pawn(this.defendPlayer, 12, new Position(6, 6)));
+        this.defenders.add(new Pawn(this.defendPlayer, 13, new Position(5, 7)));
+    }
+
+    private void initAttackers() {
+        this.attackers = new ArrayList<>();
+        // Place pawns of type "♟" around the board - attacker
+        this.attackers.add(new Pawn(this.attackPlayer,1, new Position(3, 0)));
+        this.attackers.add(new Pawn(this.attackPlayer,2, new Position(4, 0)));
+        this.attackers.add(new Pawn(this.attackPlayer,3, new Position(5, 0)));
+        this.attackers.add(new Pawn(this.attackPlayer,4, new Position(6, 0)));
+        this.attackers.add(new Pawn(this.attackPlayer,5, new Position(7, 0)));
+        this.attackers.add(new Pawn(this.attackPlayer,6, new Position(5, 1)));
+
+        this.attackers.add(new Pawn(this.attackPlayer,7, new Position(0, 3)));
+        this.attackers.add(new Pawn(this.attackPlayer,9, new Position(0, 4)));
+        this.attackers.add(new Pawn(this.attackPlayer,11, new Position(0, 5)));
+        this.attackers.add(new Pawn(this.attackPlayer,15, new Position(0, 6)));
+        this.attackers.add(new Pawn(this.attackPlayer,17, new Position(0, 7)));
+        this.attackers.add(new Pawn(this.attackPlayer,12, new Position(1, 5)));
+
+        this.attackers.add(new Pawn(this.attackPlayer,8, new Position(10, 3)));
+        this.attackers.add(new Pawn(this.attackPlayer,10, new Position(10, 4)));
+        this.attackers.add(new Pawn(this.attackPlayer,14, new Position(10, 5)));
+        this.attackers.add(new Pawn(this.attackPlayer,16, new Position(10, 6)));
+        this.attackers.add(new Pawn(this.attackPlayer,18, new Position(10, 7)));
+        this.attackers.add(new Pawn(this.attackPlayer,13, new Position(9, 5)));
+
+        this.attackers.add(new Pawn(this.attackPlayer,20, new Position(3, 10)));
+        this.attackers.add(new Pawn(this.attackPlayer,21, new Position(4, 10)));
+        this.attackers.add(new Pawn(this.attackPlayer,22, new Position(5, 10)));
+        this.attackers.add(new Pawn(this.attackPlayer,23, new Position(6, 10)));
+        this.attackers.add(new Pawn(this.attackPlayer,24, new Position(7, 10)));
+        this.attackers.add(new Pawn(this.attackPlayer,19, new Position(5, 9)));
+    }
     public boolean move(Position a, Position b) {
-        if(!isMoveLegal(a,b))
+        if(!isMoveLegal(a,b)) {
             return false;
-        else if(board[a.getX()][a.getY()] instanceof King) {
-            saveState();
-            isAttTurn = !isAttTurn;
-            kingMove(a,b);
-            isGameFinished();
-            return true;
         }
         else {
             saveState();
             isAttTurn = !isAttTurn;
-            if (isGameFinished())
+            movePiece(a,b);
+            if (isGameFinished()) {
+                createStatistics();
                 return true;
-
-            ConcreatePiece temp= board[a.getX()][a.getY()];
-            this.board[b.getX()][b.getY()] = temp;
-            this.board[a.getX()][a.getY()]=null;
-            eat(b);
+            }
+            if(board[b.getX()][b.getY()] instanceof Pawn) {
+                eat(b);
+            }
             return true;
+        }
+    }
+
+    private void createStatistics() {
+        try {
+            PrintWriter writer = new PrintWriter("statistics.txt", StandardCharsets.UTF_8);
+            if (isDefenderWin) {
+                writeDefenders(writer);
+                writeAttackers(writer);
+            } else {
+                writeAttackers(writer);
+                writeDefenders(writer);
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred while creating statistics.txt");
+            e.printStackTrace();
+        }
+    }
+
+    private void writeAttackers(PrintWriter writer) {
+        writePieces(writer, attackers);
+    }
+
+    private void writeDefenders(PrintWriter writer) {
+        writePieces(writer, defenders);
+    }
+
+    private void writePieces(PrintWriter writer, ArrayList<ConcreatePiece> pieces) {
+        for (ConcreatePiece piece : pieces) {
+            writer.print(piece.getTitle() + ": [");
+            ArrayList<Position> movesHistory = piece.getMovesHistory();
+            for (int i = 0; i < movesHistory.size(); i++) {
+                Position position = movesHistory.get(i);
+                writer.print("(" + position.getX() + ", " + position.getY() + ")");
+                // Add comma only if it's not the last position
+                if (i != movesHistory.size() - 1) {
+                    writer.print(", ");
+                }
+            }
+            writer.println("]");
         }
     }
 
@@ -142,13 +202,15 @@ public class GameLogic implements PlayableLogic {
         return true;
     }
 
-    public void kingMove(Position a,Position b)
+    public void movePiece(Position curPos, Position newPos)
     {
-        this.kingPos.setPos(b.getX(), b.getY());
-        ConcreatePiece temp= board[a.getX()][a.getY()];
-        this.board[b.getX()][b.getY()] = temp;
-        this.board[a.getX()][a.getY()]=null;
-
+        ConcreatePiece piece = board[curPos.getX()][curPos.getY()];
+        piece.addMove(newPos);
+        this.board[newPos.getX()][newPos.getY()] = piece;
+        this.board[curPos.getX()][curPos.getY()] = null;
+        if (piece instanceof King) {
+            this.kingPos = newPos;
+        }
     }
     public void eat(Position a) {
         ConcreatePiece myLock = board[a.getX()][a.getY()];
@@ -212,9 +274,7 @@ public class GameLogic implements PlayableLogic {
     @Override
     public boolean isGameFinished()
     {
-        int x=this.kingPos.getX();
-        int y=this.kingPos.getY();
-        if(isKingSurrounded(x,y))
+        if(isKingSurrounded())
         {
             attWin();
             return true;
@@ -227,7 +287,9 @@ public class GameLogic implements PlayableLogic {
         return false;
     }
 
-    private boolean isKingSurrounded(int x, int y) {
+    private boolean isKingSurrounded() {
+        int x = this.kingPos.getX();
+        int y = this.kingPos.getY();
         int enemyCount = 0;
         if (x > 0 && this.board[x - 1][y] != null && this.board[x - 1][y].getOwner().isPlayerOne() != this.board[x][y].getOwner().isPlayerOne()) {
             ++enemyCount;
@@ -254,12 +316,14 @@ public class GameLogic implements PlayableLogic {
 
     public void attWin()
     {
+        isDefenderWin = false;
         attackPlayer.wins();
         reset();
     }
 
     public void defWin()
     {
+        isDefenderWin = true;
         defendPlayer.wins();
         reset();
     }

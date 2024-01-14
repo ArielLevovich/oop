@@ -1,17 +1,22 @@
 package src;
 
+import java.util.ArrayList;
+
 public abstract class ConcreatePiece implements Piece
 {
     private final Player owner;
     private final String type;
     private final String title;
     private int killsCount;
+    private final ArrayList<Position> movesHistory;
 
-    ConcreatePiece(Player owner, String type, String title) {
+    ConcreatePiece(Player owner, String type, String title, Position position) {
         this.owner = owner;
         this.type = type;
         this.title = title;
         this.killsCount = 0;
+        this.movesHistory = new ArrayList<>();
+        this.movesHistory.add(position);
     }
     @Override
     public Player getOwner() {
@@ -25,5 +30,17 @@ public abstract class ConcreatePiece implements Piece
 
     public String getTitle() {
         return this.title;
+    }
+
+    public ArrayList<Position> getMovesHistory() {
+        return this.movesHistory;
+    }
+
+    public void addMove(Position move) {
+        this.movesHistory.add(move);
+    }
+
+    public Position getFirstPosition() {
+        return this.movesHistory.getFirst();
     }
 }
