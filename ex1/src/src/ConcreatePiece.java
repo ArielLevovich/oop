@@ -1,6 +1,7 @@
 package src;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public abstract class ConcreatePiece implements Piece
 {
@@ -18,6 +19,7 @@ public abstract class ConcreatePiece implements Piece
         this.movesHistory = new ArrayList<>();
         this.movesHistory.add(position);
     }
+
     @Override
     public Player getOwner() {
         return this.owner;

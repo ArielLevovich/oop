@@ -141,36 +141,8 @@ public class GameLogic implements PlayableLogic {
         writePieces(writer, defenders);
     }
 
-    static class SpecialNumericComparator implements Comparator<String> {
-        @Override
-        public int compare(String s1, String s2) {
-            // Compare the first characters
-            int firstCharComparison = Character.compare(s1.charAt(0), s2.charAt(0));
-            if (firstCharComparison != 0) {
-                return firstCharComparison;
-            }
-
-            // Extract numeric parts
-            int num1 = Integer.parseInt(s1.substring(1));
-            int num2 = Integer.parseInt(s2.substring(1));
-
-            // Single-digit vs multi-digit comparison
-            boolean isSingleDigit1 = (num1 >= 1 && num1 <= 9);
-            boolean isSingleDigit2 = (num2 >= 1 && num2 <= 9);
-
-            if (isSingleDigit1 && !isSingleDigit2) {
-                return -1; // Single-digit numbers are considered smaller
-            } else if (!isSingleDigit1 && isSingleDigit2) {
-                return 1; // Multi-digit numbers are considered larger
-            } else {
-                // Both numbers are of the same type, compare numerically
-                return Integer.compare(num1, num2);
-            }
-        }
-    }
     private void writePieces(PrintWriter writer, ArrayList<ConcreatePiece> pieces) {
-
-        pieces.sort((p1, p2) -> new SpecialNumericComparator().compare(p1.getTitle(), p2.getTitle()));
+        pieces.sort((p1, p2) -> new ListSizeComparator().compare(p1, p2));
 
         for (ConcreatePiece piece : pieces) {
             writer.print(piece.getTitle() + ": [");
