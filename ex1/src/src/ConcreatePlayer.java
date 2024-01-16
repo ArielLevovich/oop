@@ -11,8 +11,6 @@ public class ConcreatePlayer implements Player{
         this.winsCount=0;
     }
 
-
-
     public boolean isPlayerOne()
     {
         return isDefender;

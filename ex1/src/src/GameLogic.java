@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 //import java.util.Comparator;
+import java.util.Comparator;
 import java.util.Stack;
 
 import static java.lang.System.*;
@@ -157,6 +158,13 @@ public class GameLogic implements PlayableLogic {
             }
             writer.println("]");
         }
+        String asterisks = "*******************************************************************"; // 75 asterisks
+
+            writer.write(asterisks);
+            writer.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public boolean isMoveLegal(Position a, Position b) {
@@ -230,10 +238,13 @@ public class GameLogic implements PlayableLogic {
                         Position myPlayerPosition = new Position(myPlayerX, myPlayerY);
                         // if the next piece is the same type as the current player (my players surround the other player)
                         if (isInsideTheBoard(myPlayerX, myPlayerY) && board[myPlayerX][myPlayerY] != null && isOfTheSameType(a, myPlayerPosition)) {
+                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
                             board[otherPlayerX][otherPlayerY] = null;
                         } else if (!isInsideTheBoard(myPlayerX, myPlayerY)) { // or the other player is on the edge of the board.
+                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
                             board[otherPlayerX][otherPlayerY] = null;
                         } else if (isCornerPosition(myPlayerPosition)) {
+                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
                             board[otherPlayerX][otherPlayerY] = null;
                         }
                     }
@@ -289,6 +300,45 @@ public class GameLogic implements PlayableLogic {
         return false;
     }
 
+     class KillsCountComp implements Comparator<ConcreatePiece> {
+        @Override
+        public int compare(ConcreatePiece o1, ConcreatePiece o2) {
+            // First, compare by killsCount in descending order
+            int killsCompare = Integer.compare(((Pawn)o2).getKillsCount(),((Pawn)o1).getKillsCount());
+            if (killsCompare != 0) {
+                return killsCompare;
+            }
+
+            // If killsCount is equal, compare by serial title
+            int titleCompare = o1.getTitle().compareTo(o2.getTitle());
+            if (titleCompare != 0) {
+                return titleCompare;
+            }
+
+            // If both killsCount and serial title are equal, compare by winning team
+            if(compareByWinningTeam(o1, o2) == -1)
+                return Integer.compare(((Pawn)o2).getKillsCount(),((Pawn)o1).getKillsCount());
+            else return Integer.compare(((Pawn)o1).getKillsCount(),((Pawn)o2).getKillsCount());
+        }
+    }
+
+    private int compareByWinningTeam(ConcreatePiece o1, ConcreatePiece o2) {
+        if(isDefenderWin) {
+            if (o1.getOwner().isPlayerOne()) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+        else {
+            if (o1.getOwner().isPlayerOne()) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+    }
+
     private boolean isKingSurrounded() {
         int x = this.kingPos.getX();
         int y = this.kingPos.getY();
@@ -321,6 +371,7 @@ public class GameLogic implements PlayableLogic {
         isDefenderWin = false;
         attackPlayer.wins();
         createStatistics();
+
         reset();
     }
 
