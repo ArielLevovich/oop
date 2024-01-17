@@ -18,6 +18,7 @@ package src;
          }
 
          // If both killsCount and serial title are equal, compare by winning team
-         return extractWin();
+         //return extractWin();
+         return 1;
      }
  }
