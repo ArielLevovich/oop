@@ -1,25 +1,36 @@
 package src;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 
 public abstract class ConcreatePiece implements Piece
 {
     private final Player owner;
     private final String type;
     private final String title;
-    private int killsCount;
+    private final String titlePrefix;
+    private final int titleNumber;
+    private int distance;
     private final ArrayList<Position> movesHistory;
+    private int killsCount;
 
-    ConcreatePiece(Player owner, String type, String title, Position position) {
+    ConcreatePiece(Player owner, String type, String titlePrefix, int titleNumber, Position position) {
         this.owner = owner;
         this.type = type;
-        this.title = title;
-        this.killsCount = 0;
+        this.titlePrefix = titlePrefix;
+        this.titleNumber = titleNumber;
+        this.title = titlePrefix + titleNumber;
         this.movesHistory = new ArrayList<>();
         this.movesHistory.add(position);
+        this.distance = 0;
+        this.killsCount = 0;
     }
+    public int getDistance(){return this.distance;}
 
+    public void addDistance(Position p1, Position p2)
+    {
+        int x= (int) Math.sqrt(Math.pow(p2.getX()-p1.getX(),2)+Math.pow(p2.getY()-p1.getY(),2));
+        this.distance+=x;
+    }
     @Override
     public Player getOwner() {
         return this.owner;
@@ -44,5 +55,20 @@ public abstract class ConcreatePiece implements Piece
 
     public Position getFirstPosition() {
         return this.movesHistory.getFirst();
+    }
+
+    public String getTitlePrefix() {
+        return titlePrefix;
+    }
+
+    public int getTitleNumber() {
+        return titleNumber;
+    }
+
+    public int getKillsCount() {
+        return this.killsCount;
+    }
+    public void increaseKills() {
+        this.killsCount++;
     }
 }

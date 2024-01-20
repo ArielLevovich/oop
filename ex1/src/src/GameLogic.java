@@ -1,14 +1,9 @@
 package src;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-//import java.util.Comparator;
-import java.util.Comparator;
 import java.util.Stack;
 
-import static java.lang.System.*;
+import static java.lang.System.arraycopy;
 
 public class GameLogic implements PlayableLogic {
     private final int BOARD_SIZE = 11;
@@ -19,17 +14,15 @@ public class GameLogic implements PlayableLogic {
     private ArrayList<ConcreatePiece> defenders;
     private final ConcreatePlayer attackPlayer = new ConcreatePlayer(false);
     private final ConcreatePlayer defendPlayer = new ConcreatePlayer(true);
-    private boolean gameFinish; //check this Boolean
     private boolean isAttTurn;//is attacker turn
     private Position kingPos;
-    private boolean isDefenderWin;
+    private boolean isDefenderWon;
     public GameLogic() {
         reset();
     }
 
     @Override
     public void reset() {
-        this.gameFinish = false;
         this.isAttTurn = true;
         this.kingPos = new Position(5,5);
 
@@ -112,98 +105,63 @@ public class GameLogic implements PlayableLogic {
             if(board[b.getX()][b.getY()] instanceof Pawn) {
                 eat(b);
             }
+            board[b.getX()][b.getY()].addDistance(a,b);
             return true;
         }
     }
 
-    private void createStatistics1() {
-        try {
-            PrintWriter writer = new PrintWriter("statistics.txt", StandardCharsets.UTF_8);
-            if (isDefenderWin) {
-                writeDefenders1(writer);
-                writeAttackers1(writer);
-            } else {
-                writeAttackers1(writer);
-                writeDefenders1(writer);
-            }
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("An error occurred while creating statistics.txt");
-            e.printStackTrace();
-        }
-    }
-
-    private void createStatistics2() {
-        try {
-            PrintWriter writer = new PrintWriter("statistics.txt", StandardCharsets.UTF_8);
-            writeAllPlayers2(writer);
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("An error occurred while creating statistics.txt");
-            e.printStackTrace();
-        }
-    }
-
-    private void writeAttackers1(PrintWriter writer) {
-        writePieces1(writer, attackers);
-    }
-
-    private void writeDefenders1(PrintWriter writer) {
-        writePieces1(writer, defenders);
-    }
-
-
-    private void writeAllPlayers2(PrintWriter writer) {
-        ArrayList<ConcreatePiece> allPlayers = new ArrayList<>();
-        for (ConcreatePiece piece : this.attackers) {
-            if (!(piece instanceof King)) {
-                allPlayers.add(piece);
-            }
-        }
-        for (ConcreatePiece piece : this.defenders) {
-            if (!(piece instanceof King)) {
-                allPlayers.add(piece);
-            }
-        }
-        writePieces2(writer, allPlayers);
-    }
-
-    private void writePieces1(PrintWriter writer, ArrayList<ConcreatePiece> pieces) {
-        pieces.sort((p1, p2) -> new ListSizeComparator().compare(p1, p2));
+    private void printPiecesByMovesHistory(ArrayList<ConcreatePiece> pieces) {
+        pieces.sort((p1, p2) -> new MoveHistorySizeComparator(isDefenderWon).compare(p1, p2));
 
         for (ConcreatePiece piece : pieces) {
             ArrayList<Position> movesHistory = piece.getMovesHistory();
             if(movesHistory.size() >=2) {
-                writer.print(piece.getTitle() + ": [");
-                    for (int i = 0; i < movesHistory.size(); i++) {
-                        Position position = movesHistory.get(i);
-                        writer.print("(" + position.getX() + ", " + position.getY() + ")");
-                        // Add comma only if it's not the last position
-                        if (i != movesHistory.size() - 1) {
-                            writer.print(", ");
-                        }
+                //writer.print(piece.getTitle() + ": [");
+                System.out.print(piece.getTitle() + ": [");
+                for (int i = 0; i < movesHistory.size(); i++) {
+                    Position position = movesHistory.get(i);
+                    //writer.print("(" + position.getX() + ", " + position.getY() + ")");
+                    System.out.print("(" + position.getX() + ", " + position.getY() + ")");
+
+                    // Add comma only if it's not the last position
+                    if (i != movesHistory.size() - 1) {
+                        //writer.print(", ");
+                        System.out.print(",");
+
                     }
+                }
+                System.out.println(("]"));
             }
-            writer.println("]");
         }
     }
 
-    private void writePieces2(PrintWriter writer, ArrayList<ConcreatePiece> pieces) {
-        pieces.sort((p1, p2) -> new KillsCountComp().compare(p1, p2));
+    private void printPlayerByKillsCount(ArrayList<ConcreatePiece> pieces) {
+        pieces.sort((p1, p2) -> new KillsCountComparator(isDefenderWon).compare(p1, p2));
+
         String asterisks = "*******************************************************************"; // 75 asterisks
-        writer.print(asterisks);
-        writer.println();
+        System.out.println(asterisks);
         for (ConcreatePiece piece : pieces) {
-            int killsCount = ((Pawn) piece).getKillsCount();
+            int killsCount = piece.getKillsCount();
             if(killsCount == 0) continue;
-            writer.print(piece.getTitle() + ": [");
-            writer.print("kills count: " + killsCount);
+            System.out.print(piece.getTitle() + ": [");
+            System.out.print("kills count: " + killsCount);
+            System.out.println("]");
         }
-
-        writer.println("]");
     }
 
+    private void printPlayersByDistance(ArrayList<ConcreatePiece> pieces) {
+        pieces.sort((p1, p2) -> new DistanceCountComparator(isDefenderWon).compare(p1, p2));
 
+        String asterisks = "*******************************************************************"; // 75 asterisks
+        System.out.println(asterisks);
+        for (ConcreatePiece piece : pieces) {
+            int distanceCount = piece.getDistance();
+            if(distanceCount == 0) continue;
+            System.out.print(piece.getTitle() + ": [");
+            System.out.print(distanceCount+ " squares" );
+            System.out.println("]");
+        }
+    }
     public boolean isMoveLegal(Position a, Position b) {
         if (a == null) {
             return false;
@@ -326,55 +284,15 @@ public class GameLogic implements PlayableLogic {
     {
         if(isKingSurrounded())
         {
-            attWin();
+            attackerWin();
             return true;
         }
 
         if(this.isCornerPosition(this.kingPos)) {
-            defWin();
+            defenderWon();
             return true;
         }
         return false;
-    }
-
-     class KillsCountComp implements Comparator<ConcreatePiece> {
-        @Override
-        public int compare(ConcreatePiece o1, ConcreatePiece o2) {
-            // First, compare by killsCount in descending order
-            int killsCompare = Integer.compare(((Pawn)o2).getKillsCount(),((Pawn)o1).getKillsCount());
-            if (killsCompare != 0) {
-                return killsCompare;
-            }
-
-            // If killsCount is equal, compare by serial title
-            int titleCompare = o1.getTitle().compareTo(o2.getTitle());
-            // elian please check that !sub(01) == sub(s2)
-            if (titleCompare != 0 ) {
-                return titleCompare;
-            }
-
-            // If both killsCount and serial title are equal, compare by winning team
-            if(compareByWinningTeam(o1, o2) == -1)
-                return Integer.compare(((Pawn)o2).getKillsCount(),((Pawn)o1).getKillsCount());
-            else return Integer.compare(((Pawn)o1).getKillsCount(),((Pawn)o2).getKillsCount());
-        }
-    }
-
-    private int compareByWinningTeam(ConcreatePiece o1, ConcreatePiece o2) {
-        if(isDefenderWin) {
-            if (o1.getOwner().isPlayerOne()) {
-                return 1;
-            } else {
-                return -1;
-            }
-        }
-        else {
-            if (o1.getOwner().isPlayerOne()) {
-                return 1;
-            } else {
-                return -1;
-            }
-        }
     }
 
     private boolean isKingSurrounded() {
@@ -404,21 +322,26 @@ public class GameLogic implements PlayableLogic {
         }
     }
 
-    public void attWin()
+    public void attackerWin()
     {
-        isDefenderWin = false;
+        isDefenderWon = false;
         attackPlayer.wins();
-        createStatistics1();
-        createStatistics2();
+        printStatistics();
         reset();
     }
 
-    public void defWin()
+    private void printStatistics() {
+        ArrayList<ConcreatePiece> players = createALlPlayersList();
+        printPiecesByMovesHistory(players);
+        printPlayerByKillsCount(players);
+        printPlayersByDistance(players);
+    }
+
+    public void defenderWon()
     {
-        isDefenderWin = true;
+        isDefenderWon = true;
         defendPlayer.wins();
-        createStatistics1();
-        createStatistics2();
+        printStatistics();
         reset();
     }
 
@@ -453,6 +376,11 @@ public class GameLogic implements PlayableLogic {
         }
         return copy;
     }
+
+    private ArrayList<ConcreatePiece> createALlPlayersList() {
+        ArrayList<ConcreatePiece> allPlayers = new ArrayList<>();
+        allPlayers.addAll(this.defenders);
+        allPlayers.addAll(this.attackers);
+        return allPlayers;
+    }
 }
-
-
