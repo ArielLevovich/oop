@@ -1,6 +1,7 @@
 package src;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Stack;
 
 import static java.lang.System.arraycopy;
@@ -8,8 +9,8 @@ import static java.lang.System.arraycopy;
 public class GameLogic implements PlayableLogic {
     private final int BOARD_SIZE = 11;
     private final Stack<ConcreatePiece[][]> gameStates = new Stack<>();
-    private ConcreatePiece[][] board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
-
+    private ConcreatePiece[][] board;
+    private HashSet<String>[][] squares;
     private ArrayList<ConcreatePiece> attackers;
     private ArrayList<ConcreatePiece> defenders;
     private final ConcreatePlayer attackPlayer = new ConcreatePlayer(false);
@@ -17,6 +18,7 @@ public class GameLogic implements PlayableLogic {
     private boolean isAttTurn;//is attacker turn
     private Position kingPos;
     private boolean isDefenderWon;
+    private final String asterisks = "***************************************************************************"; // 75 asterisks
     public GameLogic() {
         reset();
     }
@@ -28,16 +30,33 @@ public class GameLogic implements PlayableLogic {
 
         initDefenders();
         initAttackers();
+        initSquares();
         initBoard();
+    }
+
+    private void initSquares() {
+        squares = new HashSet[BOARD_SIZE][BOARD_SIZE];
     }
 
     private void initBoard() {
         this.board = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
         for (ConcreatePiece piece : this.defenders) {
-            this.board[piece.getFirstPosition().getX()][piece.getFirstPosition().getY()] = piece;
+            SetBoardSquare(piece.getFirstPosition(), piece);
         }
         for (ConcreatePiece piece : this.attackers) {
-            this.board[piece.getFirstPosition().getX()][piece.getFirstPosition().getY()] = piece;
+            SetBoardSquare(piece.getFirstPosition(), piece);
+        }
+    }
+
+    private void SetBoardSquare(Position position, ConcreatePiece piece) {
+        int x = position.getX();
+        int y = position.getY();
+        this.board[x][y] = piece;
+        if (this.squares[x][y] == null) {
+            this.squares[x][y] = new HashSet<>();
+        }
+        if (piece != null) {
+            this.squares[x][y].add(piece.getTitle());
         }
     }
 
@@ -99,13 +118,13 @@ public class GameLogic implements PlayableLogic {
             saveState();
             isAttTurn = !isAttTurn;
             movePiece(a,b);
+            board[b.getX()][b.getY()].addDistance(a,b);
             if (isGameFinished()) {
                 return true;
             }
             if(board[b.getX()][b.getY()] instanceof Pawn) {
                 eat(b);
             }
-            board[b.getX()][b.getY()].addDistance(a,b);
             return true;
         }
     }
@@ -125,43 +144,61 @@ public class GameLogic implements PlayableLogic {
 
                     // Add comma only if it's not the last position
                     if (i != movesHistory.size() - 1) {
-                        //writer.print(", ");
-                        System.out.print(",");
-
+                        System.out.print(", ");
                     }
                 }
                 System.out.println(("]"));
             }
         }
+        System.out.println(asterisks);
     }
 
     private void printPlayerByKillsCount(ArrayList<ConcreatePiece> pieces) {
         pieces.sort((p1, p2) -> new KillsCountComparator(isDefenderWon).compare(p1, p2));
-
-        String asterisks = "*******************************************************************"; // 75 asterisks
-        System.out.println(asterisks);
         for (ConcreatePiece piece : pieces) {
             int killsCount = piece.getKillsCount();
             if(killsCount == 0) continue;
-            System.out.print(piece.getTitle() + ": [");
-            System.out.print("kills count: " + killsCount);
-            System.out.println("]");
+            System.out.println(piece.getTitle() + ": " + killsCount + " kills");
         }
+        System.out.println(asterisks);
     }
 
     private void printPlayersByDistance(ArrayList<ConcreatePiece> pieces) {
         pieces.sort((p1, p2) -> new DistanceCountComparator(isDefenderWon).compare(p1, p2));
-
-        String asterisks = "*******************************************************************"; // 75 asterisks
-        System.out.println(asterisks);
         for (ConcreatePiece piece : pieces) {
             int distanceCount = piece.getDistance();
             if(distanceCount == 0) continue;
-            System.out.print(piece.getTitle() + ": [");
-            System.out.print(distanceCount+ " squares" );
-            System.out.println("]");
+            System.out.print(piece.getTitle() + ": ");
+            System.out.println(distanceCount + " squares");
         }
+        System.out.println(asterisks);
     }
+
+    private void printSquares() {
+        ArrayList<Square> squares = createSquaresList();
+        squares.sort((s1, s2) -> new SquareComparator().compare(s1, s2));
+        for (Square square : squares) {
+            int x = square.getX();
+            int y = square.getY();
+            HashSet<String> piecesTitles = square.getPiecesTitles();
+            System.out.println("(" + x + ", " + y + ")" + piecesTitles.size() + " pieces");
+        }
+        System.out.println(asterisks);
+    }
+
+    private ArrayList<Square> createSquaresList() {
+        ArrayList<Square> squares = new ArrayList<>();
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            for (int y = 0; y < BOARD_SIZE; y++) {
+                HashSet<String> piecesTitles = this.squares[x][y];
+                if (piecesTitles != null && piecesTitles.size() > 1) {
+                    squares.add(new Square(x, y, piecesTitles));
+                }
+            }
+        }
+        return squares;
+    }
+
     public boolean isMoveLegal(Position a, Position b) {
         if (a == null) {
             return false;
@@ -211,7 +248,7 @@ public class GameLogic implements PlayableLogic {
     {
         ConcreatePiece piece = board[curPos.getX()][curPos.getY()];
         piece.addMove(newPos);
-        this.board[newPos.getX()][newPos.getY()] = piece;
+        SetBoardSquare(newPos, piece);
         this.board[curPos.getX()][curPos.getY()] = null;
         if (piece instanceof King) {
             this.kingPos = newPos;
@@ -233,19 +270,21 @@ public class GameLogic implements PlayableLogic {
                         Position myPlayerPosition = new Position(myPlayerX, myPlayerY);
                         // if the next piece is the same type as the current player (my players surround the other player)
                         if (isInsideTheBoard(myPlayerX, myPlayerY) && board[myPlayerX][myPlayerY] != null && isOfTheSameType(a, myPlayerPosition)) {
-                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
-                            board[otherPlayerX][otherPlayerY] = null;
+                            transformTwoSquares(a, otherPlayerX, otherPlayerY);
                         } else if (!isInsideTheBoard(myPlayerX, myPlayerY)) { // or the other player is on the edge of the board.
-                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
-                            board[otherPlayerX][otherPlayerY] = null;
+                            transformTwoSquares(a, otherPlayerX, otherPlayerY);
                         } else if (isCornerPosition(myPlayerPosition)) {
-                            ((Pawn) board[a.getX()][a.getY()]).increaseKills();
-                            board[otherPlayerX][otherPlayerY] = null;
+                            transformTwoSquares(a, otherPlayerX, otherPlayerY);
                         }
                     }
                 }
             }
         }
+    }
+
+    private void transformTwoSquares(Position a, int otherPlayerX, int otherPlayerY) {
+        (board[a.getX()][a.getY()]).increaseKills();
+        board[otherPlayerX][otherPlayerY] = null;
     }
 
     private boolean isCornerPosition(Position myPlayerPosition) {
@@ -335,6 +374,7 @@ public class GameLogic implements PlayableLogic {
         printPiecesByMovesHistory(players);
         printPlayerByKillsCount(players);
         printPlayersByDistance(players);
+        printSquares();
     }
 
     public void defenderWon()
