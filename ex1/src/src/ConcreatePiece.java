@@ -49,6 +49,10 @@ public abstract class ConcreatePiece implements Piece
         return this.movesHistory;
     }
 
+    public void setMovesHistory(ArrayList<Position> movesHistory) {
+        this.movesHistory.clear();
+        this.movesHistory.addAll(movesHistory);
+    }
     public void addMove(Position move) {
         this.movesHistory.add(move);
     }
@@ -68,7 +72,14 @@ public abstract class ConcreatePiece implements Piece
     public int getKillsCount() {
         return this.killsCount;
     }
+    public void setKillsCount(int killsCount) {
+        this.killsCount = killsCount;
+    }
     public void increaseKills() {
         this.killsCount++;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 }

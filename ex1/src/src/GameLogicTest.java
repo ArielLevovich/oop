@@ -18,7 +18,6 @@ class GameLogicTest {
         static Stream<ComparisonData> comparisonData() {
             File inputDirectory = new File("src/test/resources/inputs");
             File outputDirectory = new File("src/test/resources/outputs");
-
             if (!inputDirectory.exists() || !outputDirectory.exists()) {
                 fail("Input or output directory not found");
             }
@@ -66,8 +65,12 @@ class GameLogicTest {
             for (int i = 0; i < moves.size() - 1; i += 2) {
                 Position from = moves.get(i);
                 Position to = moves.get(i + 1);
-                boolean result = gameLogic.move(from, to);
-                assertTrue(result); // Ensure each move is successful
+                if (from.isUndo() && to.isUndo()) {
+                    gameLogic.undoLastMove();
+                } else {
+                    boolean result = gameLogic.move(from, to);
+                    assertTrue(result); // Ensure each move is successful
+                }
             }
 
             // Restore the original System.out
@@ -106,7 +109,11 @@ class GameLogicTest {
         while (matcher.find()) {
             int x = Integer.parseInt(matcher.group(1));
             int y = Integer.parseInt(matcher.group(2));
-            positions.add(new Position(x, y));
+            if (x == 13 && y == 13) {
+                positions.add(new Position(x, y, true));
+            } else {
+                positions.add(new Position(x, y));
+            }
         }
 
         return positions;

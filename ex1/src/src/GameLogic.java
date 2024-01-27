@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Stack;
 
-import static java.lang.System.arraycopy;
-
 public class GameLogic implements PlayableLogic {
     private final int BOARD_SIZE = 11;
     private final Stack<ConcreatePiece[][]> gameStates = new Stack<>();
+    private final Stack<HashSet<String>[][]> squareStates = new Stack<>();
     private ConcreatePiece[][] board;
     private HashSet<String>[][] squares;
     private ArrayList<ConcreatePiece> attackers;
@@ -397,6 +396,10 @@ public class GameLogic implements PlayableLogic {
         if (!gameStates.isEmpty()) {
             this.board = gameStates.pop();
         }
+        if (!squareStates.isEmpty()) {
+            this.squares = squareStates.pop();
+        }
+        isAttTurn = !isAttTurn;
     }
 
     @Override
@@ -407,20 +410,55 @@ public class GameLogic implements PlayableLogic {
 
     private void saveState() {
         gameStates.push(copyBoard());
+        squareStates.push(copySquares());
     }
-    // Helper method to create a copy of the board
+
+    private HashSet<String>[][] copySquares() {
+        HashSet<String>[][] copy = new HashSet[BOARD_SIZE][BOARD_SIZE];
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (squares[i][j] != null) {
+                    copy[i][j] = new HashSet<>(squares[i][j]);
+                }
+            }
+        }
+        return copy;
+    }
+
+    // Helper method to create a deep copy of the board
     private ConcreatePiece[][] copyBoard() {
         ConcreatePiece[][] copy = new ConcreatePiece[BOARD_SIZE][BOARD_SIZE];
         for (int i = 0; i < BOARD_SIZE; i++) {
-            arraycopy(board[i], 0, copy[i], 0, BOARD_SIZE);
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                ConcreatePiece piece = board[i][j];
+                if (piece != null) {
+                    if (piece.getType().equals("♔")) {
+                        copy[i][j] = new King(piece.getTitleNumber(), piece.getFirstPosition());
+                    } else {
+                        copy[i][j] = new Pawn(piece.getOwner(), piece.getTitleNumber(), piece.getFirstPosition());
+                    }
+                    copy[i][j].setDistance(piece.getDistance());
+                    copy[i][j].setKillsCount(piece.getKillsCount());
+                    // copy the moves history
+                    copy[i][j].setMovesHistory(piece.getMovesHistory());
+                }
+            }
+
         }
         return copy;
     }
 
     private ArrayList<ConcreatePiece> createALlPlayersList() {
         ArrayList<ConcreatePiece> allPlayers = new ArrayList<>();
-        allPlayers.addAll(this.defenders);
-        allPlayers.addAll(this.attackers);
+        // if there was at least one "undo", defenders and attackers lists are not updated.
+        // therefore, we will add all the pieces from the board to the list.
+        for (ConcreatePiece[] row : board) {
+            for (ConcreatePiece piece : row) {
+                if (piece != null) {
+                    allPlayers.add(piece);
+                }
+            }
+        }
         return allPlayers;
     }
 }
